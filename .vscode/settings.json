@@ -1,0 +1,11 @@
+{
+    // "C_Cpp.default.configurationProvider": "ms-vscode.makefile-tools",
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+    "cmake.configureOnOpen": true,
+
+    "cmake.buildBeforeRun": true,
+    "cmake.configureSettings": {
+        "CMAKE_MODULE_PATH": "${workspaceFolder}/cmake"
+    },
+    "cmake.generator": "Unix Makefiles"
+}
