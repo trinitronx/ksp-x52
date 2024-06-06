@@ -64,7 +64,7 @@ int main(void) {
     libx52_exit(dev);
     fputs("Error encountered during kRPC init. Exiting.", stderr);
     free(conn);
-    return NULL;
+    return EXIT_FAILURE;
   }
 
   // Get active vessel name and display on x52 MFD
@@ -79,7 +79,7 @@ int main(void) {
     fputs(krpc_get_error(err), stderr);
     libx52_exit(dev);
     free(conn);
-    return NULL;
+    return EXIT_FAILURE;
   }
   // Set MFD line 0 to display vessel_name
   libx52_set_text(dev, 0, vessel_name, strlen(vessel_name));
@@ -92,7 +92,7 @@ int main(void) {
     libx52_exit(dev);
     krpc_close(*conn);
     free(conn);
-    return NULL;
+    return EXIT_FAILURE;
   }
 
   // Get the altiude
@@ -124,10 +124,10 @@ int main(void) {
   if (err != KRPC_OK) {
     fputs(krpc_get_error(err), stderr);
     free(conn);
-    return NULL;
+    return EXIT_FAILURE;
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }
 
 
