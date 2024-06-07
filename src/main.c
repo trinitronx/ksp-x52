@@ -1,15 +1,33 @@
+/* KSP x52                                                          {#mainpage}
+   =======
+
+   KSP-x52 provides a simple integration of Kerbal Space Program and the
+   [Saitek x52 H.O.T.A.S.][x52-homepage]
+
+   [x52-homepage]: https://www.logitechg.com/en-us/products/space/x52-space-flight-simulator-controller
+*/
 #include <stdio.h>
+#include <sys/types.h>
 
 #include <libx52.h>
 #include <krpc_cnano.h>
 #include <krpc_cnano/services/krpc.h>
 #include <krpc_cnano/services/space_center.h>
-#include <sys/types.h>
 
-// Saitek X52 Multi Function Display Max Width
+
+/**
+ * @brief Saitek X52 Multi Function Display Max Width (per line)
+ *
+ */
 const u_int X52_MFD_MAXWIDTH = 16;
 
-libx52_device* init_libx52(void)
+
+/**
+ * @brief Set the up libx52 object and connect to the Saitek X52 device
+ *
+ * @return libx52_device*
+ */
+libx52_device* setup_libx52(void)
 {
     libx52_device *dev;
     int rc;
@@ -27,27 +45,42 @@ libx52_device* init_libx52(void)
         fputs(libx52_strerror(rc), stderr);
         // A failure usually just means that there is no joystick connected
         // Look at the return codes for more information.
+        return NULL;
     }
 
     return dev;
 }
 
-// krpc_init():
-//   Initialize kRPC connection
-//   returns: kRPC connection handle pointer
+/**
+ * @brief Disconnects and cleans up libx52 device object
+ *
+ * @param dev
+ */
+void cleanup_libx52(libx52_device *dev)
+{
+  libx52_exit(dev); // Disconnect & free(dev) happens in here
+}
+
+/**
+ * @brief Initialize kRPC connection
+ *
+ * @return krpc_connection_t* kRPC connection handle pointer
+ */
 krpc_connection_t* krpc_init(void) {
   krpc_connection_t* conn = calloc(1, sizeof(krpc_connection_t));
 
   krpc_error_t err;
-  err = krpc_open(conn, "x52");
+  err = krpc_open(conn, "/dev/pts/3");
   if (err != KRPC_OK) {
     fputs(krpc_get_error(err), stderr);
+    fputs("\n", stderr);
     return NULL;
   }
 
   err = krpc_connect(*conn, "Saitek x52 MFD");
   if (err != KRPC_OK) {
     fputs(krpc_get_error(err), stderr);
+    fputs("\n", stderr);
     return NULL;
   }
 
@@ -56,13 +89,21 @@ krpc_connection_t* krpc_init(void) {
 
 int main(void) {
   libx52_device *dev;
-  dev = init_libx52();
+  dev = setup_libx52();
+  if (dev == NULL) {
+    libx52_exit(dev);
+    fputs("Error encountered during kRPC init. Exiting.", stderr);
+    fputs("\n", stderr);
+    // TODO: implement retry wait loop
+    return EXIT_FAILURE;
+  }
 
   krpc_connection_t* conn;
   conn = krpc_init();
   if (conn == NULL) {
     libx52_exit(dev);
     fputs("Error encountered during kRPC init. Exiting.", stderr);
+    fputs("\n", stderr);
     free(conn);
     return EXIT_FAILURE;
   }
@@ -77,10 +118,14 @@ int main(void) {
   err = krpc_SpaceCenter_Vessel_Name(*conn, &vessel_name, vessel);
   if (err != KRPC_OK) {
     fputs(krpc_get_error(err), stderr);
+    fputs("\n", stderr);
     libx52_exit(dev);
     free(conn);
     return EXIT_FAILURE;
   }
+
+  printf("Vessel Name: %s\n", vessel_name);
+
   // Set MFD line 0 to display vessel_name
   libx52_set_text(dev, 0, vessel_name, strlen(vessel_name));
 
@@ -89,6 +134,7 @@ int main(void) {
   err = krpc_SpaceCenter_Vessel_Flight(*conn, &flight, vessel, KRPC_NULL);
   if (err != KRPC_OK) {
     fputs(krpc_get_error(err), stderr);
+    fputs("\n", stderr);
     libx52_exit(dev);
     krpc_close(*conn);
     free(conn);
@@ -97,18 +143,20 @@ int main(void) {
 
   // Get the altiude
   double altitude;
-  char* s_altitude;
+  char* s_altitude = NULL;
   err = krpc_SpaceCenter_Flight_MeanAltitude(*conn, &altitude, flight);
   if (err != KRPC_OK) {
     fputs(krpc_get_error(err), stderr);
+    fputs("\n", stderr);
   }
 
   printf("Altitude: %.2f\n", altitude);
   // Truncate altitude to MFD max width minus 'A: ' prefix (3 chars)
-  snprintf(s_altitude, X52_MFD_MAXWIDTH - 3, "A: %.2f", altitude);
+  asprintf(&s_altitude, "A: %.2f", altitude);
 
   // Set MFD line 1 to display altitude
   libx52_set_text(dev, 1, s_altitude, strlen(s_altitude));
+  free(s_altitude);
 
   //libx52_set_text(dev, 0, "     Saitek     ", 16);
   //libx52_set_text(dev, 1, "   X52 Flight   ", 16);
@@ -123,6 +171,7 @@ int main(void) {
   krpc_close(*conn);
   if (err != KRPC_OK) {
     fputs(krpc_get_error(err), stderr);
+    fputs("\n", stderr);
     free(conn);
     return EXIT_FAILURE;
   }
