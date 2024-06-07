@@ -7,5 +7,6 @@
     "cmake.configureSettings": {
         "CMAKE_MODULE_PATH": "${workspaceFolder}/cmake"
     },
-    "cmake.generator": "Unix Makefiles"
+    "cmake.generator": "Ninja",
+    "cmake.allowUnsupportedPresetsVersions": true
 }
