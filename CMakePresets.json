@@ -1,0 +1,99 @@
+{
+    "version": 8,
+    "cmakeMinimumRequired": {
+        "major": 2,
+        "minor": 8,
+        "patch": 4
+    },
+    "configurePresets": [
+        {
+            "name": "common",
+            "hidden": true,
+            "generator": "Ninja",
+            "binaryDir": "build/${presetName}"
+        },
+        {
+            "name": "debug",
+            "displayName": "Debug",
+            "description": "CMake: Configure Debug",
+            "inherits": "common",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "release",
+            "displayName": "Release",
+            "description": "CMake: Configure Release",
+            "inherits": "common",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "debug-ci-gcc",
+            "inherits": "debug",
+            "displayName": "Debug CI gcc",
+            "description": "CMake: configure gcc Debug CI build",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++"
+            }
+        },
+        {
+            "name": "debug-ci-clang",
+            "inherits": "debug",
+            "displayName": "Debug CI clang",
+            "description": "CMake: configure clang Debug CI build",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "dev-build",
+            "displayName": "Developer Debug Build",
+            "configurePreset": "debug",
+            "configuration": "Debug",
+            "targets": [
+                "ksp-x52"
+            ]
+        },
+        {
+            "name": "release",
+            "displayName": "Release Build",
+            "configurePreset": "release",
+            "configuration": "Release",
+            "targets": [
+                "all"
+            ]
+        },
+        {
+            "name": "docs",
+            "displayName": "Generate Doxygen docs",
+            "configurePreset": "release",
+            "configuration": "Release",
+            "targets": [
+                "ksp-x52-docs"
+            ]
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "test-all",
+            "displayName": "CMake: Test All",
+            "configurePreset": "debug",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "stopOnFailure": true
+            }
+        }
+    ]
+}

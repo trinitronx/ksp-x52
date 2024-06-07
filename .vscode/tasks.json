@@ -1,0 +1,101 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "cmake",
+            "label": "CMake: configure",
+            "command": "configure",
+            "preset": "${command:cmake.activeConfigurePresetName}",
+            "icon": {
+                "id": "gear"
+            },
+            "detail": "CMake template configure task"
+        },
+        {
+            "type": "cmake",
+            "label": "CMake: build current Preset",
+            "command": "build",
+            "preset": "${command:cmake.activeBuildPresetName}",
+            "icon": {
+                "id": "package"
+            },
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": ["$gcc"],
+            "detail": "CMake build Debug task"
+        },
+        {
+            "type": "cmake",
+            "label": "CMake: clean rebuild",
+            "command": "cleanRebuild",
+            "targets": [
+                "all"
+            ],
+            "icon": {
+                "id": "run-all"
+            },
+            "group": "build",
+            "problemMatcher": [],
+            "detail": "CMake template clean rebuild task"
+        },
+        {
+            "type": "cmake",
+            "label": "CMake: clean",
+            "command": "clean",
+            "problemMatcher": [],
+            "icon": {
+                "id": "trashcan"
+            },
+            "detail": "CMake template clean task"
+        },
+        {
+            "type": "cmake",
+            "label": "CMake: test",
+            "command": "test",
+            "problemMatcher": [],
+            "icon": {
+                "id": "beaker"
+            },
+            "detail": "CMake template test task"
+        },
+        {
+            "type": "cmake",
+            "label": "CMake: package",
+            "command": "build",
+            "preset": "package",
+            "icon": {
+                "id": "package"
+            },
+            "problemMatcher": [],
+            "detail": "CMake template package task"
+        },
+        {
+            "type": "cmake",
+            "label": "CMake: Doxygen docs",
+            "command": "build",
+            "preset": "docs",
+            "icon": {
+                "id": "book"
+            },
+            "problemMatcher": [],
+            "detail": "Cmake generate Doxygen docs"
+        },
+        {
+            "type": "cmake",
+            "label": "CMake: build Release",
+            "command": "build",
+            "preset": "release",
+            "targets": [
+                "all"
+            ],
+            "icon": {
+                "id": "rocket"
+            },
+            "group": "build",
+            "problemMatcher": [],
+            "detail": "CMake build Release task"
+        }
+    ]
+}
