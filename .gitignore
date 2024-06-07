@@ -11,5 +11,6 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 CMakeUserPresets.json
+CMakeDoxygenDefaults.cmake
 # Built files
 build/
