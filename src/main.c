@@ -6,6 +6,8 @@
 
    [x52-homepage]: https://www.logitechg.com/en-us/products/space/x52-space-flight-simulator-controller
 */
+#include <krpc_cnano/error.h>
+#include <signal.h>
 #include <stdio.h>
 #include <sys/types.h>
 
@@ -19,7 +21,7 @@
  * @brief Saitek X52 Multi Function Display Max Width (per line)
  *
  */
-const u_int X52_MFD_MAXWIDTH = 16;
+const int X52_MFD_MAXWIDTH = 16;
 
 
 /**
@@ -70,7 +72,7 @@ krpc_connection_t* krpc_init(void) {
   krpc_connection_t* conn = calloc(1, sizeof(krpc_connection_t));
 
   krpc_error_t err;
-  err = krpc_open(conn, "/dev/pts/3");
+  err = krpc_open(conn, "/run/user/1000/ksp-x52.client.pty");
   if (err != KRPC_OK) {
     fputs(krpc_get_error(err), stderr);
     fputs("\n", stderr);
@@ -87,8 +89,25 @@ krpc_connection_t* krpc_init(void) {
   return conn;
 }
 
+/**
+ * @brief Global variable to control when main loop exits
+ *
+ */
+volatile sig_atomic_t done = 0;
+
+/**
+ * @brief Signal handler function
+ *
+ * @param signum
+ */
+void
+sig_handle(int signum)
+{
+    done = 1;
+}
+
 int main(void) {
-  libx52_device *dev;
+  libx52_device* dev;
   dev = setup_libx52();
   if (dev == NULL) {
     libx52_exit(dev);
@@ -108,67 +127,80 @@ int main(void) {
     return EXIT_FAILURE;
   }
 
-  // Get active vessel name and display on x52 MFD
-  krpc_SpaceCenter_Vessel_t vessel;
-  krpc_SpaceCenter_ActiveVessel(*conn, &vessel);
-  //krpc_SpaceCenter_Vessel_set_Name(conn, vessel, "My Vessel");
   krpc_error_t err;
-
-  char* vessel_name;
-  err = krpc_SpaceCenter_Vessel_Name(*conn, &vessel_name, vessel);
-  if (err != KRPC_OK) {
-    fputs(krpc_get_error(err), stderr);
-    fputs("\n", stderr);
-    libx52_exit(dev);
-    free(conn);
-    return EXIT_FAILURE;
-  }
-
-  printf("Vessel Name: %s\n", vessel_name);
-
-  // Set MFD line 0 to display vessel_name
-  libx52_set_text(dev, 0, vessel_name, strlen(vessel_name));
-
-  // Get a handle to a Flight object for the vessel
+  double altitude; // double to store numeric altitude
+  char *s_altitude = NULL; // string for formatting data on MFD
+  char *vessel_name;
+  krpc_SpaceCenter_Vessel_t vessel;
   krpc_SpaceCenter_Flight_t flight;
-  err = krpc_SpaceCenter_Vessel_Flight(*conn, &flight, vessel, KRPC_NULL);
-  if (err != KRPC_OK) {
-    fputs(krpc_get_error(err), stderr);
-    fputs("\n", stderr);
-    libx52_exit(dev);
-    krpc_close(*conn);
-    free(conn);
-    return EXIT_FAILURE;
+  printf("%s", "Inside main line 136\n");
+
+  s_altitude = calloc(X52_MFD_MAXWIDTH + 1, sizeof(char)); // Problem is here
+
+  // Main Data -> MFD update loop
+  while (!done) {
+    // Get active vessel name and display on x52 MFD
+    krpc_SpaceCenter_ActiveVessel(*conn, &vessel);
+    //krpc_SpaceCenter_Vessel_set_Name(conn, vessel, "My Vessel");
+
+    err = krpc_SpaceCenter_Vessel_Name(*conn, &vessel_name, vessel);
+    if (err != KRPC_OK) {
+      fputs(krpc_get_error(err), stderr);
+      fputs("\n", stderr);
+      libx52_exit(dev);
+      free(conn);
+      return EXIT_FAILURE;
+    }
+
+    printf("Vessel Name: %s\n", vessel_name);
+
+    // Set MFD line 0 to display vessel_name
+    libx52_set_text(dev, 0, vessel_name, strlen(vessel_name));
+
+    // Get a handle to a Flight object for the vessel
+    err = krpc_SpaceCenter_Vessel_Flight(*conn, &flight, vessel, KRPC_NULL);
+    if (err != KRPC_OK) {
+      fputs(krpc_get_error(err), stderr);
+      fputs("\n", stderr);
+      libx52_exit(dev);
+      krpc_close(*conn);
+      free(conn);
+      return EXIT_FAILURE;
+    }
+
+    // Get the altiude
+    err = krpc_SpaceCenter_Flight_MeanAltitude(*conn, &altitude, flight);
+    if (err != KRPC_OK) {
+      fputs(krpc_get_error(err), stderr);
+      fputs("\n", stderr);
+      libx52_exit(dev);
+      krpc_close(*conn);
+      free(conn);
+      return EXIT_FAILURE;
+    }
+
+    printf("Altitude: %.2f\n", altitude);
+    // Truncate altitude to MFD max width minus 'A: ' prefix (3 chars)
+    // snprintf(s_altitude, X52_MFD_MAXWIDTH, "A: %.2f\0", altitude);
+    sprintf(s_altitude, "A: %.2f", altitude);
+
+    // Set MFD line 1 to display altitude
+    libx52_set_text(dev, 1, s_altitude, strlen(s_altitude));
+
+
+    //libx52_set_text(dev, 0, "     Saitek     ", 16);
+    //libx52_set_text(dev, 1, "   X52 Flight   ", 16);
+    //libx52_set_text(dev, 2, " Control System ", 16);
+
+    // Update the display
+    libx52_update(dev);
   }
-
-  // Get the altiude
-  double altitude;
-  char* s_altitude = NULL;
-  err = krpc_SpaceCenter_Flight_MeanAltitude(*conn, &altitude, flight);
-  if (err != KRPC_OK) {
-    fputs(krpc_get_error(err), stderr);
-    fputs("\n", stderr);
-  }
-
-  printf("Altitude: %.2f\n", altitude);
-  // Truncate altitude to MFD max width minus 'A: ' prefix (3 chars)
-  asprintf(&s_altitude, "A: %.2f", altitude);
-
-  // Set MFD line 1 to display altitude
-  libx52_set_text(dev, 1, s_altitude, strlen(s_altitude));
   free(s_altitude);
-
-  //libx52_set_text(dev, 0, "     Saitek     ", 16);
-  //libx52_set_text(dev, 1, "   X52 Flight   ", 16);
-  //libx52_set_text(dev, 2, " Control System ", 16);
-
-  // Update the display
-  libx52_update(dev);
 
   // Close the library and any associated devices
   libx52_exit(dev);
 
-  krpc_close(*conn);
+  err = krpc_close(*conn);
   if (err != KRPC_OK) {
     fputs(krpc_get_error(err), stderr);
     fputs("\n", stderr);
