@@ -8,5 +8,7 @@
         "CMAKE_MODULE_PATH": "${workspaceFolder}/cmake"
     },
     "cmake.generator": "Ninja",
-    "cmake.allowUnsupportedPresetsVersions": true
+    "cmake.allowUnsupportedPresetsVersions": true,
+    "C_Cpp.default.cStandard": "c17",
+    "cmake.copyCompileCommands": "${workspaceFolder}/compile_commands.json"
 }
