@@ -18,11 +18,14 @@
 
 
 /**
- * @brief Saitek X52 Multi Function Display Max Width (per line)
+ * @brief Saitek X52 Multi Function Display constants
  *
+ * @note The X52 MFD has 3 lines of 16 characters each
  */
-const int X52_MFD_MAXWIDTH = 16;
-
+const int X52_MFD_MAXWIDTH = 16; // Max Width (per line)
+const int X52_MFD_LINE_1 = 0; // Line 1
+const int X52_MFD_LINE_2 = 1; // Line 2
+const int X52_MFD_LINE_3 = 2; // Line 3
 
 /**
  * @brief Set the up libx52 object and connect to the Saitek X52 device
