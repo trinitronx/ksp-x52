@@ -65,6 +65,15 @@
             ]
         },
         {
+            "name": "dev-build-ci-clang",
+            "displayName": "Developer Debug Build - clang",
+            "configurePreset": "debug",
+            "configuration": "Debug",
+            "targets": [
+                "ksp-x52"
+            ]
+        },
+        {
             "name": "release",
             "displayName": "Release Build",
             "configurePreset": "release",
